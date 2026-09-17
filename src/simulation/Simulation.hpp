@@ -1,8 +1,11 @@
 #pragma once
 #include <vector>
 #include <unordered_map>
+#include <iostream>
 
 namespace simulation {
+
+    constexpr float PI = 3.141592653589f;
 
     struct Vec2 {
         float x, y;
@@ -41,28 +44,24 @@ namespace simulation {
     };
 
     enum class EntityType {
-        Esphere
+        Circle
     };
 
     struct Entity {
-        Vec2 position;
-        Vec2 size;
-        Vec2 velocity = {0, 1}; 
-        CellCoord cell;
-        EntityType type = EntityType::Esphere;
+        Vec2 position{ 0.f, 0.f };
+        float radius{ 0.f };
+        Vec2 velocity{ 0.f, 0.f };
+        CellCoord cell{ 0, 0 };
+        EntityType type = EntityType::Circle;
+
+        Entity(Vec2 position, float radius, Vec2 velocity, CellCoord cell);
     };
 
     class SpatialHashGrid {
     public:
-        explicit SpatialHashGrid(float cellSize)
-            : cellSize_(cellSize) {
-        }
+        explicit SpatialHashGrid(float cellSize);
 
-        void clear() {
-            grid_.clear();
-        }
-
-        void insert(Entity* entity, CellCoord newCellCoord);
+        void insert(Entity* entity);
 
         void remove(Entity* entity);
 
@@ -70,45 +69,40 @@ namespace simulation {
 
         std::vector<Entity*> queryNearby(Vec2 pos);
 
-        std::unordered_map<CellCoord, std::vector<Entity*>, CellHash>& grid() {
-            return grid_;
-        }
-
-        const std::unordered_map<CellCoord, std::vector<Entity*>, CellHash>& grid() const {
-            return grid_;
-        }
-
-        std::vector<Entity*>& candidates() {
-            return candidates_;
-        }
-
-        const std::vector<Entity*>& candidates() const {
-            return candidates_;
-        }
-
     private:
         CellCoord getCell(Vec2 pos) const;
 
         float cellSize_;
 
-        std::vector<Entity*> candidates_{};
+        std::vector<Entity*> result_;
 
         std::unordered_map<CellCoord, std::vector<Entity*>, CellHash> grid_;   
     };
 
     struct CollisionSystem {
-        bool isColliding(Entity* other, Entity* entity);
-        void resolveCollision(Entity* entity, Entity* other);
-        void narrowPhase(std::vector<Entity*> candidates, Entity* entity);
+        static bool isColliding(Entity* other, Entity* entity);
+        static void resolveCollision(Entity* entity, Entity* other);
+        static void narrowPhase(std::vector<Entity*>& candidates, Entity* entity);
+        static void limitsCollision(Entity* entity, int limitW, int limitH);
     };
 
     class Domain {
     public:
-        Domain(SpatialHashGrid& grid) : spatialGrid_(grid) {}
+        Domain(SpatialHashGrid& grid);
 
-        void updateCells();
+        void populateGrid(int limitW, int limitH);
+        void updateCells(int deltaTime, int limitW, int limitH);
+
+        const std::vector<std::unique_ptr<Entity>>& entities() const {
+            return entities_;
+        }
+
+        std::vector<std::unique_ptr<Entity>>& entities() {
+            return entities_;
+        }
+
     private:
-        const float deltaTime_ = 0.0016f;
         SpatialHashGrid& spatialGrid_;
+        std::vector<std::unique_ptr<Entity>> entities_;
     };
 }
