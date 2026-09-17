@@ -5,8 +5,6 @@
 
 namespace simulation {
 
-    constexpr float PI = 3.141592653589f;
-
     struct Vec2 {
         float x, y;
 
@@ -90,7 +88,7 @@ namespace simulation {
     public:
         Domain(SpatialHashGrid& grid);
 
-        void populateGrid(int limitW, int limitH);
+        void populateGrid();
         void updateCells(int deltaTime, int limitW, int limitH);
 
         const std::vector<std::unique_ptr<Entity>>& entities() const {

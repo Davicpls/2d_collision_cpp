@@ -1,7 +1,7 @@
 #include <simulation/Simulation.hpp>
 #include <ctime>
 #include <cmath>
-
+#include <iostream>
 simulation::SpatialHashGrid::SpatialHashGrid(float cellSize)
 	: cellSize_(cellSize){}
 
@@ -102,11 +102,11 @@ void simulation::CollisionSystem::resolveCollision(Entity* entity, Entity* other
 	if (velocityAlongNormal > 0.0f)
 		return;
 
-	entity->position.x -= normal.x * penetration * 0.5f;
-	entity->position.y -= normal.y * penetration * 0.5f;
+	entity->position.x -= normal.x * penetration * 0.75f;
+	entity->position.y -= normal.y * penetration * 0.75f;
 
-	other->position.x += normal.x * penetration * 0.5f;
-	other->position.y += normal.y * penetration * 0.5f;
+	other->position.x += normal.x * penetration * 0.75f;
+	other->position.y += normal.y * penetration * 0.75f;
 
 	entity->velocity.x *= -1.0f;
 	entity->velocity.y *= -1.0f;
@@ -127,25 +127,34 @@ void simulation::CollisionSystem::narrowPhase(std::vector<Entity*>& candidates, 
 
 void simulation::CollisionSystem::limitsCollision(Entity* entity, int limitW, int limitH) {
 
-	if (entity->position.x - entity->radius <= 0 && entity->position.x + entity->radius >= limitW) {
-		entity->velocity.x *= -1;
-		entity->velocity.x *= -1;
+
+	if (entity->position.x - entity->radius <= 0 && entity->position.y - entity->radius <= 0) {
+		entity->velocity.x *= -1.0f;
+		entity->velocity.y *= -1.0f;
+		entity->position.x += 0.1f;
+		entity->position.y += 0.1f;
+	}
+	else if (entity->position.x + entity->radius >= limitW && entity->position.y + entity->radius >= limitH) {
+		entity->velocity.x *= -1.0f;
+		entity->velocity.y *= -1.0f;
+		entity->position.x -= 0.1f;
+		entity->position.y -= 0.1f;
 	}
 	else if (entity->position.x - entity->radius <= 0) {
-		entity->velocity.x *= -1;
+		entity->velocity.x *= -1.0f;
+		entity->position.x += 0.1f;
 	} 
 	else if (entity->position.x + entity->radius >= limitW) {
-		entity->velocity.x *= -1;
+		entity->velocity.x *= -1.0f;
+		entity->position.x -= 0.1f;
 	}
-	if (entity->position.y - entity->radius <= 0 && entity->position.y + entity->radius >= limitW) {
-		entity->velocity.y *= -1;
-		entity->velocity.y *= -1;
-	}
-	else if (entity->position.y - entity->radius < 0) {
-		entity->velocity.y *= -1;
+	else if (entity->position.y - entity->radius <= 0) {
+		entity->velocity.y *= -1.0f;
+		entity->position.y += 0.1f;
 	}
 	else if (entity->position.y + entity->radius >= limitH) {
-		entity->velocity.y *= -1;
+		entity->velocity.y *= -1.0f;
+		entity->position.y -= 0.1f;
 	}
 	return;
 }
@@ -155,14 +164,38 @@ simulation::Domain::Domain(simulation::SpatialHashGrid& grid) : spatialGrid_(gri
 simulation::Entity::Entity(Vec2 position, float radius, Vec2 velocity, CellCoord cell) 
 	: position(position), radius(radius), velocity(velocity), cell(cell){}
 
-void simulation::Domain::populateGrid(int limitW, int limitH) {
+void simulation::Domain::populateGrid() {
 
-	for (int balls = 1; balls < 151; balls += 3) {
+	for (int balls = 1; balls < 851; balls += 3) {
+		std::srand(balls);
+		auto entity = std::make_unique<Entity>(
+			Vec2{ static_cast<float>(balls) * 2.0f, static_cast<float>(balls) * 0.2f },
+			2.0f,
+			Vec2{ 15.0f, 55.0f },
+			CellCoord{ balls, balls });
+		Entity* ptr = entity.get();
+		entities_.emplace_back(std::move(entity));
+		spatialGrid_.insert(ptr);
+	}
+
+	for (int balls = 851; balls < 2251; balls += 3) {
 		std::srand(balls);
 		auto entity = std::make_unique<Entity>(
 			Vec2 { static_cast<float>(balls) * 0.5f, static_cast<float>(balls) * 0.5f },
-			2.0f, 
-			Vec2 { 1.0f, 20.0f },
+			0.5f, 
+			Vec2 { 45.0f, 25.0f },
+			CellCoord { balls, balls });
+		Entity* ptr = entity.get();
+		entities_.emplace_back(std::move(entity));
+		spatialGrid_.insert(ptr);
+	}
+
+	for (int balls = 2551; balls < 2572; balls += 3) {
+		std::srand(balls);
+		auto entity = std::make_unique<Entity>(
+			Vec2 { static_cast<float>(balls % 150) * 2.0f, static_cast<float>(balls % 150) * 2.0f },
+			16.0f, 
+			Vec2 { 15.0f, 50.0f },
 			CellCoord { balls, balls });
 		Entity* ptr = entity.get();
 		entities_.emplace_back(std::move(entity));

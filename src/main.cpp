@@ -11,7 +11,7 @@ int main(int argc, char* argv[]) {
 	QApplication app(argc, argv);
 	simulation::SpatialHashGrid spatialGrid(2);
 	simulation::Domain domain(spatialGrid);
-	domain.populateGrid(w / 4, h / 4);
+	domain.populateGrid();
 	MainWindow window(domain, x, y, w, h);
 	window.show();
 
